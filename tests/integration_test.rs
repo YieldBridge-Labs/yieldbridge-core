@@ -7,7 +7,7 @@ use stream_factory::{StreamFactory, StreamFactoryClient};
 use vault_core::{DataKey, PERSISTENT_TTL_EXTEND_TO, YieldVault, YieldVaultClient};
 
 mod vault_wasm {
-    soroban_sdk::contractimport!(file = "./target/wasm32v1-none/release/vault_core.wasm");
+    soroban_sdk::contractimport!(file = "./test_fixtures/vault_core.wasm");
 }
 
 fn setup() -> (Env, Address, Address, Address) {

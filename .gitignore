@@ -1,4 +1,5 @@
 /target/
 **/*.wasm
+!test_fixtures/*.wasm
 **/*.optimized.wasm
 .stellar/

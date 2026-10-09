@@ -7,7 +7,7 @@ use soroban_sdk::{
 };
 
 mod vault_wasm {
-    soroban_sdk::contractimport!(file = "../../target/wasm32v1-none/release/vault_core.wasm");
+    soroban_sdk::contractimport!(file = "../../test_fixtures/vault_core.wasm");
 }
 
 fn setup_factory() -> (
