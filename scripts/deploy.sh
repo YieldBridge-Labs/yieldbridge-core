@@ -9,12 +9,12 @@ NETWORK="${STELLAR_NETWORK:-testnet}"
 SOURCE_ACCOUNT="${STELLAR_SOURCE_ACCOUNT:-admin}"
 RPC_URL="${STELLAR_RPC_URL:-https://soroban-testnet.stellar.org}"
 
-echo "==> [1/4] Building optimized Soroban contracts for target wasm32v1-none..."
+echo "==> [1/4] Building optimized Soroban contracts..."
 cargo fmt --all -- --check
 cargo test --workspace --all-targets
 
-stellar contract build --package vault_core --target wasm32v1-none
-stellar contract build --package stream_factory --target wasm32v1-none
+stellar contract build --package vault_core
+stellar contract build --package stream_factory
 
 VAULT_WASM="target/wasm32v1-none/release/vault_core.wasm"
 FACTORY_WASM="target/wasm32v1-none/release/stream_factory.wasm"
@@ -35,10 +35,19 @@ FACTORY_CONTRACT_ID=$(stellar contract deploy \
 
 echo "    Stream Factory Deployed ID: $FACTORY_CONTRACT_ID"
 
-echo "==> [4/4] Initializing Factory / Test Vault..."
-# Optional: Deploy a test vault via factory salt deployment call
-SALT=$(openssl rand -hex 32 2>/dev/null || date +%s%N | sha256sum | head -c 64)
+echo "==> [4/4] Initializing Factory..."
 ADMIN_ADDRESS=$(stellar keys address "$SOURCE_ACCOUNT" 2>/dev/null || echo "")
+if [ -n "$ADMIN_ADDRESS" ]; then
+  echo "    Initializing Stream Factory with Admin ($ADMIN_ADDRESS) and Vault Template ($VAULT_WASM_HASH)..."
+  stellar contract invoke \
+    --id "$FACTORY_CONTRACT_ID" \
+    --source "$SOURCE_ACCOUNT" \
+    --network "$NETWORK" \
+    -- \
+    initialize \
+    --admin "$ADMIN_ADDRESS" \
+    --vault_wasm_hash "$VAULT_WASM_HASH" || true
+fi
 
 echo ""
 echo "========================================================================="

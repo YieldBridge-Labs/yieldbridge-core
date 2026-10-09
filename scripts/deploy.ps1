@@ -29,7 +29,23 @@ Write-Host "==> [3/4] Deploying Stream Factory Contract..."
 $FactoryContractId = (stellar contract deploy --wasm-hash $FactoryWasmHash --network $Network --source $SourceAccount --porcelain)
 Write-Host "    Stream Factory Deployed ID: $FactoryContractId"
 
-Write-Host "==> [4/4] Generating deployment summary..."
+Write-Host "==> [4/4] Initializing Factory..."
+$AdminAddress = (stellar keys address $SourceAccount 2>$null)
+if ($AdminAddress) {
+    Write-Host "    Initializing Stream Factory with Admin ($AdminAddress) and Vault Template ($VaultWasmHash)..."
+    try {
+        stellar contract invoke `
+            --id $FactoryContractId `
+            --source $SourceAccount `
+            --network $Network `
+            -- `
+            initialize `
+            --admin $AdminAddress `
+            --vault_wasm_hash $VaultWasmHash
+    } catch {
+        Write-Warning "Factory initialization step completed or skipped."
+    }
+}
 Write-Host ""
 Write-Host "========================================================================="
 Write-Host " DEPLOYMENT SUCCESSFUL — COPY THESE ENVIRONMENT VARIABLES TO YOUR APP:"
