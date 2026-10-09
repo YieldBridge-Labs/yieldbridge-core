@@ -1,0 +1,4 @@
+/target/
+**/*.wasm
+**/*.optimized.wasm
+.stellar/
