@@ -4,11 +4,14 @@ on:
   push:
     branches:
       - main
-      - dev
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  SOROBAN_SDK_BUILD_SYSTEM_SUPPORTS_SPEC_SHAKING_V2: 1
 
 jobs:
   release:
@@ -39,6 +42,13 @@ jobs:
           cargo rustc --manifest-path contracts/vault_core/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
           cargo rustc --manifest-path contracts/stream_factory/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
           cargo rustc --manifest-path contracts/campaign_escrow/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
+
+      - name: Verify WASM Binaries Exist
+        run: |
+          test -f target/wasm32v1-none/release/vault_core.wasm
+          test -f target/wasm32v1-none/release/stream_factory.wasm
+          test -f target/wasm32v1-none/release/campaign_escrow.wasm
+          echo "All contracts compiled to WASM successfully."
 
       - name: Install Semantic Release Plugins
         run: |
