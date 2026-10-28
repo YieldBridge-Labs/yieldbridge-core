@@ -1,0 +1,14 @@
+# Cargo Audit configuration for YieldBridge Core
+# https://github.com/rustsec/rustsec/tree/main/cargo-audit
+
+[advisories]
+ignore = [
+    # RUSTSEC-2026-0387: Multiple timing variability issues in crypto-bigint < 0.7.6.
+    # Transitive dev-dependency pinned by soroban-env-host v28 (ark-ff / ark-bn254) in testutils.
+    # Non-exploitable in production contracts which compile as #![no_std] wasm32v1-none without testutils.
+    "RUSTSEC-2026-0387",
+
+    # RUSTSEC-2024-0436: paste is unmaintained.
+    # Transitive dev-dependency used in soroban-wasmi for testing host environment.
+    "RUSTSEC-2024-0436",
+]

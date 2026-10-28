@@ -57,6 +57,7 @@ jobs:
         uses: rustsec/audit-check@v1.4.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ignore: RUSTSEC-2026-0387, RUSTSEC-2024-0436
 
   test:
     name: Workspace Tests
