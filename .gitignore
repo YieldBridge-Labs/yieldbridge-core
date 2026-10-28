@@ -3,3 +3,8 @@
 !test_fixtures/*.wasm
 **/*.optimized.wasm
 .stellar/
+node_modules/
+dist/
+.env
+.env.*
+*.log

@@ -1,0 +1,79 @@
+{
+  "branches": [
+    "main",
+    {
+      "name": "dev",
+      "prerelease": "rc"
+    }
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "perf", "release": "patch" },
+          { "type": "security", "release": "patch" },
+          { "breaking": true, "release": "major" }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "✨ Features & Smart Contract Enhancements" },
+            { "type": "fix", "section": "🐛 Bug Fixes & Arithmetic Patches" },
+            { "type": "perf", "section": "⚡ Performance & Gas Optimizations" },
+            { "type": "security", "section": "🔒 Zero-Trust Security & Auditing Updates" },
+            { "type": "docs", "section": "📚 Documentation & Architecture" },
+            { "type": "refactor", "section": "🔨 Code Refactoring" },
+            { "type": "test", "section": "🧪 Testing & QA Suites" },
+            { "type": "ci", "section": "🚀 CI/CD & Governance Pipeline" }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# YieldBridge Core Protocol Changelog"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "README.md",
+          "Cargo.toml"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "target/wasm32v1-none/release/vault_core.wasm",
+            "label": "vault_core.wasm (Soroban Optimized Binary)"
+          },
+          {
+            "path": "target/wasm32v1-none/release/stream_factory.wasm",
+            "label": "stream_factory.wasm (Deterministic Deployer)"
+          },
+          {
+            "path": "target/wasm32v1-none/release/campaign_escrow.wasm",
+            "label": "campaign_escrow.wasm (MultiSig Escrow & Commission Engine)"
+          }
+        ]
+      }
+    ]
+  ]
+}

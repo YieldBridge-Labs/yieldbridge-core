@@ -49,27 +49,34 @@ We expect all contributors to adhere to open-source etiquette, respect fellow co
 
 ## Branching & Pull Request Workflow
 
-1. **Fork and Branch:** Create a feature or fix branch from `main`:
+1. **Fork and Branch:** Create a feature or fix branch from `dev`:
    ```bash
-   git checkout -b feat/linear-stream-optimization
+   git checkout dev
+   git pull origin dev
+   git checkout -b feat/multi-sig-escrow-engine
    ```
 
-2. **Run Local Checks:** Ensure all tests pass and code is formatted prior to pushing:
+2. **Run Local Checks:** Ensure all tests pass, code is formatted, and WASM binaries compile prior to pushing:
    ```bash
    cargo fmt --all -- --check
+   cargo clippy --all-targets -- -D warnings
    cargo test --workspace --all-targets
    stellar contract build --package vault_core
    stellar contract build --package stream_factory
+   stellar contract build --package campaign_escrow
    ```
 
 3. **Open a Pull Request:**
-   - Target the `main` branch.
-   - Fill in the PR description with clear rationale, problem statement, and testing steps.
-   - Reference any relevant GitHub issues (`Closes #123`).
+   - **Target the `dev` branch** for all active features, fixes, and contract updates.
+   - PRs to `main` are reserved exclusively for production releases triggered by maintainers.
+   - Use the provided PR template and link any relevant GitHub issues (`Closes #123`).
 
 4. **CI & Review:**
-   - All automated CI checks (Format, Test Suite, Clippy, Contract Build) must pass.
+   - All automated CI checks (Format, Clippy, Security Audit, Test Suite, Contract Build) must pass.
    - At least one code review approval is required prior to merge.
+
+5. **Automated Semantic Releases:**
+   - Merges into `main` automatically trigger `.releaserc.json` semantic release automation, generating changelog entries, bumping versions, and publishing compiled WASM artifacts to GitHub Releases.
 
 ---
 

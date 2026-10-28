@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -45,6 +45,21 @@ jobs:
 
       - name: Run Clippy static analysis
         run: cargo clippy --all-targets -- -D warnings
+
+  security-audit:
+    name: Zero-Trust Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Cargo Audit for vulnerabilities
+        run: |
+          cargo install cargo-audit --locked || true
+          cargo audit
 
   test:
     name: Workspace Tests
@@ -103,8 +118,22 @@ jobs:
       - name: Build stream_factory cdylib WASM
         run: cargo rustc --manifest-path contracts/stream_factory/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
 
-      - name: Verify WASM binaries exist
+      - name: Build campaign_escrow cdylib WASM
+        run: cargo rustc --manifest-path contracts/campaign_escrow/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
+
+      - name: Verify WASM binaries and budget constraints (< 64KB)
         run: |
           test -f target/wasm32v1-none/release/vault_core.wasm
           test -f target/wasm32v1-none/release/stream_factory.wasm
-          echo "All Soroban contract WASMs generated successfully."
+          test -f target/wasm32v1-none/release/campaign_escrow.wasm
+          
+          # Check size limits
+          for wasm in target/wasm32v1-none/release/*.wasm; do
+            SIZE=$(stat -c%s "$wasm" 2>/dev/null || stat -f%z "$wasm")
+            echo "Binary: $wasm ($SIZE bytes)"
+            if [ "$SIZE" -gt 65536 ]; then
+              echo "Error: $wasm exceeds 64KB gas budget limit!"
+              exit 1
+            fi
+          done
+          echo "All Soroban contract WASMs generated and validated within gas size budget."

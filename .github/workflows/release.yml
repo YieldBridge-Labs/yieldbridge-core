@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Semantic Release & WASM Artifact Publishing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust toolchain with wasm32v1-none
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Compile Optimized WASM Binaries
+        run: |
+          cargo rustc --manifest-path contracts/vault_core/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
+          cargo rustc --manifest-path contracts/stream_factory/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
+          cargo rustc --manifest-path contracts/campaign_escrow/Cargo.toml --crate-type=cdylib --target=wasm32v1-none --release
+
+      - name: Install Semantic Release Plugins
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/changelog \
+            @semantic-release/git \
+            @semantic-release/github
+
+      - name: Execute Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release

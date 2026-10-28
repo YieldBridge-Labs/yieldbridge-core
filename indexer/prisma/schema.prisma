@@ -1,0 +1,167 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum CampaignStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  FINALIZED
+  FAILED
+}
+
+model Vault {
+  id                 String                     @id @default(uuid())
+  address            String                     @unique
+  adminAddress       String
+  tokenAddress       String
+  streamDuration     BigInt
+  totalShares        String                     @default("0")
+  totalFunded        String                     @default("0")
+  totalClaimed       String                     @default("0")
+  rewardRateScaled   String                     @default("0")
+  lastUpdateTime     BigInt
+  periodFinish       BigInt
+  status             String                     @default("ACTIVE")
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  investors          Investor[]
+  events             YieldEvent[]
+  commissions        CommissionDisbursement[]
+
+  @@index([adminAddress])
+  @@index([tokenAddress])
+}
+
+model Campaign {
+  id                 Int                        @id
+  campaignAddress    String
+  creatorAddress     String
+  beneficiaryAddress String
+  tokenAddress       String
+  targetAmount       String
+  totalRaised        String                     @default("0")
+  deadline           BigInt
+  commissionBps      Int
+  approvalCount      Int                        @default(0)
+  threshold          Int                        @default(2)
+  status             CampaignStatus             @default(PENDING_APPROVAL)
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  approvals          MultiSigApproval[]
+  deposits           CampaignDeposit[]
+  commissions        CommissionDisbursement[]
+
+  @@index([creatorAddress])
+  @@index([beneficiaryAddress])
+  @@index([status])
+}
+
+model MultiSigApproval {
+  id            String    @id @default(uuid())
+  campaignId    Int
+  signerAddress String
+  signature     String?
+  approvedAt    DateTime  @default(now())
+  campaign      Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, signerAddress])
+  @@index([signerAddress])
+}
+
+model CampaignDeposit {
+  id              String    @id @default(uuid())
+  campaignId      Int
+  investorAddress String
+  amount          String
+  refunded        Boolean   @default(false)
+  depositedAt     DateTime  @default(now())
+  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, investorAddress])
+  @@index([investorAddress])
+}
+
+model Investor {
+  id               String    @id @default(uuid())
+  vaultAddress     String
+  investorAddress  String
+  shares           String    @default("0")
+  rewardDebtScaled String    @default("0")
+  accruedScaled    String    @default("0")
+  totalClaimed     String    @default("0")
+  lastClaimedAt    DateTime?
+  vault            Vault     @relation(fields: [vaultAddress], references: [address], onDelete: Cascade)
+
+  @@unique([vaultAddress, investorAddress])
+  @@index([investorAddress])
+}
+
+model YieldEvent {
+  id              String    @id @default(uuid())
+  txHash          String
+  ledgerSequence  BigInt
+  contractAddress String
+  eventType       String
+  data            Json
+  blockTimestamp  BigInt
+  indexedAt       DateTime  @default(now())
+  vault           Vault?    @relation(fields: [contractAddress], references: [address], onDelete: Cascade)
+
+  @@index([contractAddress, eventType])
+  @@index([ledgerSequence])
+  @@index([txHash])
+}
+
+model CommissionDisbursement {
+  id               String    @id @default(uuid())
+  campaignId       Int?
+  vaultAddress     String?
+  txHash           String
+  treasuryAddress  String
+  commissionAmount String
+  netPayout        String
+  disbursedAt      DateTime  @default(now())
+  campaign         Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  vault            Vault?    @relation(fields: [vaultAddress], references: [address], onDelete: SetNull)
+
+  @@index([treasuryAddress])
+  @@index([txHash])
+}
+
+model IndexerCursor {
+  id                     String    @id @default("MAIN_CURSOR")
+  lastProcessedLedger    BigInt
+  lastProcessedTimestamp BigInt
+  status                 String    @default("SYNCED")
+  updatedAt              DateTime  @updatedAt
+}
+
+model EncryptedRecord {
+  id                 String    @id @default(uuid())
+  entityType         String
+  entityId           String
+  ciphertext         String
+  iv                 String
+  authTag            String
+  ephemeralPublicKey String
+  auditorPublicKey   String
+  createdAt          DateTime  @default(now())
+
+  @@index([entityType, entityId])
+}
+
+model WebhookSubscription {
+  id               String    @id @default(uuid())
+  targetUrl        String
+  secret           String
+  subscribedEvents String[]
+  isActive         Boolean   @default(true)
+  failureCount     Int       @default(0)
+  createdAt        DateTime  @default(now())
+}
